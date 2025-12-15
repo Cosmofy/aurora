@@ -1,0 +1,33 @@
+# HTTP -> HTTPS redirect
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: aurora-http
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`aurora.arryan.xyz`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https  # reuse the one we already created
+      services:
+        - name: aurora
+          port: 2260
+---
+# HTTPS route
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: aurora-https
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`aurora.arryan.xyz`)
+      kind: Rule
+      services:
+        - name: aurora
+          port: 2260
+  tls:
+    certResolver: letsencrypt

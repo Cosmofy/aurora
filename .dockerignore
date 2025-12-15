@@ -1,0 +1,12 @@
+venv/
+.git/
+data/
+training/
+k8s/
+*.tar
+*.p8
+__pycache__/
+*.pyc
+.gitignore
+CLAUDE.md
+LICENSE

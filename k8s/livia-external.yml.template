@@ -1,0 +1,20 @@
+# Service without a selector - we manually define where it points
+apiVersion: v1
+kind: Service
+metadata:
+  name: livia-external
+spec:
+  ports:
+    - port: 2259
+      targetPort: 2259
+---
+# Endpoints - manually specify the IP address
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: livia-external  # must match Service name
+subsets:
+  - addresses:
+      - ip: ${HOST_IP}  # host IP where Docker runs
+    ports:
+      - port: 2259

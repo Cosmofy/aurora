@@ -1,0 +1,14 @@
+requests
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+xgboost
+joblib
+fastapi
+uvicorn
+httpx
+pyjwt
+cryptography
+gunicorn

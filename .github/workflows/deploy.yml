@@ -1,0 +1,16 @@
+name: Deploy Aurora
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # manual trigger
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Run Ansible Playbook
+        run: |
+          cd /home/noobie/Projects/Cosmofy/aurora
+          ansible-playbook -i ansible/inventory/hosts.yml ansible/playbook.yml

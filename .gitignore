@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+weatherkit.p8
+*.p8
+k8s/secret.yml
+k8s/secret.yaml
+k8s/traefik-config.yml
+k8s/livia-external.yml
+SESSION_SUMMARY.md

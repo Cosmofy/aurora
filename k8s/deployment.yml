@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: aurora
+spec:
+    replicas: 2
+    selector:
+        matchLabels:
+            app: aurora # manage pods that have the label app: aurora
+    strategy:
+        type: RollingUpdate # replace pods one at a time
+        rollingUpdate:
+            maxUnavailable: 1 # only 1 pod can be down during update
+            maxSurge: 2 # can temporarily run 2 extra pods while updating
+    template:
+        metadata:
+            labels:
+                app: aurora #  labels each pod with app: aurora so the selector can find them.
+        spec:
+            containers:
+                - name: aurora
+                  image: aurora:latest
+                  imagePullPolicy: Never # use locally imported image
+                  ports:
+                      - containerPort: 2260
+                  resources:
+                      requests:
+                          memory: "512Mi"
+                          cpu: "250m"
+                      limits:
+                          memory: "1Gi"
+                          cpu: "1000m"
+                  livenessProbe:
+                      httpGet:
+                          path: /health
+                          port: 2260
+                      initialDelaySeconds: 15
+                      periodSeconds: 10
+                      timeoutSeconds: 5 # wait 5s for response
+                      failureThreshold: 3
+                  readinessProbe:
+                      httpGet:
+                          path: /health
+                          port: 2260
+                      initialDelaySeconds: 10
+                      periodSeconds: 5
+                      timeoutSeconds: 5 # wait 5s for response
+                  env:
+                      - name: WEATHERKIT_KEY_ID
+                        valueFrom:
+                            secretKeyRef:
+                                name: aurora-secrets
+                                key: WEATHERKIT_KEY_ID
+                      - name: WEATHERKIT_TEAM_ID
+                        valueFrom:
+                            secretKeyRef:
+                                name: aurora-secrets
+                                key: WEATHERKIT_TEAM_ID
+                      - name: WEATHERKIT_SERVICE_ID
+                        valueFrom:
+                            secretKeyRef:
+                                name: aurora-secrets
+                                key: WEATHERKIT_SERVICE_ID
+                      - name: WEATHERKIT_PRIVATE_KEY
+                        valueFrom:
+                            secretKeyRef:
+                                name: aurora-secrets
+                                key: weatherkit.p8

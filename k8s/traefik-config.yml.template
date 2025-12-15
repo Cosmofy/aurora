@@ -1,0 +1,26 @@
+# HelmChartConfig to customize K3s's Traefik
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    # Add Let's Encrypt cert resolver with Route53 DNS challenge
+    additionalArguments:
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=route53"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=8.8.8.8:53,1.1.1.1:53"
+    # AWS credentials for Route53
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        value: "${AWS_ACCESS_KEY_ID}"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "${AWS_SECRET_ACCESS_KEY}"
+      - name: AWS_REGION
+        value: "${AWS_REGION}"
+    # Persist certs
+    persistence:
+      enabled: true

@@ -1,0 +1,32 @@
+---
+- name: deploy aurora ml backend
+  hosts: all
+  tasks:
+      - name: clone/update aurora repo
+        git:
+            repo: https://github.com/Cosmofy/aurora.git
+            dest: /srv/infra/aurora
+            version: main
+
+      - name: build aurora docker image
+        command: docker build -t aurora:latest .
+        args:
+            chdir: /srv/infra/aurora
+
+      - name: import image to k3s
+        shell: docker save aurora:latest | sudo k3s ctr images import - # using shell cuz of pipe
+
+      - name: apply k8s deployment
+        command: sudo kubectl apply -f /srv/infra/aurora/k8s/deployment.yml
+
+      - name: apply k8s service # load balancer
+        command: sudo kubectl apply -f /srv/infra/aurora/k8s/service.yml
+
+      - name: apply k8s hpa # auto scaler
+        command: sudo kubectl apply -f /srv/infra/aurora/k8s/hpa.yml
+
+      # ingress is set up once manually, not on every deploy
+      # sudo kubectl apply -f /srv/infra/aurora/k8s/aurora-ingress.yml
+
+      - name: restart deployment # rolling
+        command: sudo kubectl rollout restart deployment/aurora

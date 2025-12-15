@@ -1,0 +1,50 @@
+# HTTP -> HTTPS redirect
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+# HTTP route (redirects to HTTPS, except ACME challenges)
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: livia-http
+spec:
+  entryPoints:
+    - web  # port 80
+  routes:
+    - match: (Host(`prod1.livia.arryan.xyz`) || Host(`livia.arryan.xyz`)) && !PathPrefix(`/.well-known/acme-challenge/`)
+      kind: Rule
+      middlewares:
+        - name: redirect-https
+      services:
+        - name: livia-external
+          port: 2259
+---
+# HTTPS route (the real one)
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: livia-https
+spec:
+  entryPoints:
+    - websecure  # port 443
+  routes:
+    # /healthz returns Traefik's ping (static 200)
+    - match: (Host(`prod1.livia.arryan.xyz`) || Host(`livia.arryan.xyz`)) && Path(`/healthz`)
+      kind: Rule
+      services:
+        - name: ping@internal
+          kind: TraefikService
+    # Everything else goes to Livia
+    - match: Host(`prod1.livia.arryan.xyz`) || Host(`livia.arryan.xyz`)
+      kind: Rule
+      services:
+        - name: livia-external
+          port: 2259
+  tls:
+    certResolver: letsencrypt
