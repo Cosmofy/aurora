@@ -12,3 +12,4 @@ httpx
 pyjwt
 cryptography
 gunicorn
+redis

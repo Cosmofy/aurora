@@ -16,6 +16,9 @@
       - name: import image to k3s
         shell: docker save aurora:latest | sudo k3s ctr images import - # using shell cuz of pipe
 
+      - name: apply redis # shared cache
+        command: sudo kubectl apply -f /srv/infra/aurora/k8s/redis.yml
+
       - name: apply k8s deployment
         command: sudo kubectl apply -f /srv/infra/aurora/k8s/deployment.yml
 

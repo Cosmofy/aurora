@@ -7,9 +7,22 @@ Fetches:
 - Solar wind speed
 - Solar wind density
 - Dst index
+
+Cached in Redis (2 min TTL) - data is global, same for all locations
 """
+import os
+import json
 import httpx
 from datetime import datetime, timedelta
+
+import redis
+
+# Redis connection
+REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+CACHE_TTL = 120  # 2 minutes
+
+redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
 # NOAA SWPC endpoints (all free, no auth)
 NOAA_KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json"
@@ -17,30 +30,42 @@ NOAA_PLASMA_URL = "https://services.swpc.noaa.gov/products/solar-wind/plasma-1-d
 NOAA_MAG_URL = "https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json"
 KYOTO_DST_URL = "https://wdc.kugi.kyoto-u.ac.jp/dst_realtime/presentmonth/index.html"
 
+CACHE_KEY = "aurora:space_weather"
+
 
 async def get_space_weather() -> dict:
-    """Fetch current space weather conditions from NOAA"""
+    """Fetch current space weather conditions from NOAA (cached in Redis)"""
 
+    # Try cache first
+    try:
+        cached = redis_client.get(CACHE_KEY)
+        if cached:
+            return json.loads(cached)
+    except Exception as e:
+        print(f"Redis read error: {e}")
+
+    # Fetch fresh data
     async with httpx.AsyncClient(timeout=10.0) as client:
-        # Get Kp index
         kp_index = await _get_kp(client)
-
-        # Get solar wind plasma (speed, density)
         plasma = await _get_plasma(client)
-
-        # Get IMF Bz
         bz = await _get_bz(client)
-
-        # Get Dst (fallback to estimate if unavailable)
         dst = await _get_dst(client, kp_index)
 
-    return {
+    data = {
         "kp_index": kp_index,
         "bz": bz,
         "solar_wind_speed": plasma["speed"],
         "solar_wind_density": plasma["density"],
         "dst": dst
     }
+
+    # Cache it
+    try:
+        redis_client.setex(CACHE_KEY, CACHE_TTL, json.dumps(data))
+    except Exception as e:
+        print(f"Redis write error: {e}")
+
+    return data
 
 
 async def _get_kp(client: httpx.AsyncClient) -> float:
