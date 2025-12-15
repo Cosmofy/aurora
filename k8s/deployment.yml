@@ -25,26 +25,26 @@ spec:
                       - containerPort: 2260
                   resources:
                       requests:
-                          memory: "512Mi"
-                          cpu: "250m"
-                      limits:
                           memory: "1Gi"
-                          cpu: "1000m"
+                          cpu: "500m"
+                      limits:
+                          memory: "2Gi"
+                          cpu: "2000m"
                   livenessProbe:
+                      httpGet:
+                          path: /health
+                          port: 2260
+                      initialDelaySeconds: 30
+                      periodSeconds: 15
+                      timeoutSeconds: 10
+                      failureThreshold: 5
+                  readinessProbe:
                       httpGet:
                           path: /health
                           port: 2260
                       initialDelaySeconds: 15
                       periodSeconds: 10
-                      timeoutSeconds: 5 # wait 5s for response
-                      failureThreshold: 3
-                  readinessProbe:
-                      httpGet:
-                          path: /health
-                          port: 2260
-                      initialDelaySeconds: 10
-                      periodSeconds: 5
-                      timeoutSeconds: 5 # wait 5s for response
+                      timeoutSeconds: 10
                   env:
                       - name: WEATHERKIT_KEY_ID
                         valueFrom:
