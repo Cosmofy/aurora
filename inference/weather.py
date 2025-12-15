@@ -30,8 +30,12 @@ def _generate_weatherkit_token() -> str:
     if not all([WEATHERKIT_KEY_ID, WEATHERKIT_TEAM_ID, WEATHERKIT_SERVICE_ID, WEATHERKIT_PRIVATE_KEY_PATH]):
         raise ValueError("WeatherKit credentials not configured")
 
-    with open(WEATHERKIT_PRIVATE_KEY_PATH, 'r') as f:
-        private_key = f.read()
+    # Support both file path and direct key content
+    if WEATHERKIT_PRIVATE_KEY_PATH.startswith("-----BEGIN"):
+        private_key = WEATHERKIT_PRIVATE_KEY_PATH
+    else:
+        with open(WEATHERKIT_PRIVATE_KEY_PATH, 'r') as f:
+            private_key = f.read()
 
     now = int(time.time())
     payload = {

@@ -17,12 +17,11 @@ from datetime import datetime, timedelta
 
 import redis
 
-# Redis connection
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
-REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+# Redis connection (use K8s service DNS name)
+REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
 CACHE_TTL = 120  # 2 minutes
 
-redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
+redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 # NOAA SWPC endpoints (all free, no auth)
 NOAA_KP_URL = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json"
