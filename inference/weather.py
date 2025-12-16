@@ -8,22 +8,11 @@ Required credentials (set in environment or config):
 - WEATHERKIT_PRIVATE_KEY: Path to .p8 private key file
 
 Fallback: Open-Meteo (free, no auth) if WeatherKit fails
-Cached in Redis by location (2 min TTL)
 """
 import os
-import json
 import httpx
 import jwt
 import time
-from datetime import datetime
-
-import redis
-
-# Redis connection (use K8s service DNS name)
-REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379")
-WEATHER_CACHE_TTL = 120  # 2 minutes
-
-redis_client = redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 # WeatherKit config (set via environment variables)
 WEATHERKIT_KEY_ID = os.getenv("WEATHERKIT_KEY_ID")
@@ -33,11 +22,6 @@ WEATHERKIT_PRIVATE_KEY_PATH = os.getenv("WEATHERKIT_PRIVATE_KEY")
 
 WEATHERKIT_URL = "https://weatherkit.apple.com/api/v1/weather"
 OPENMETEO_URL = "https://api.open-meteo.com/v1/forecast"
-
-
-def _get_cache_key(lat: float, lon: float) -> str:
-    """Generate cache key from rounded lat/lon (within ~11km)."""
-    return f"aurora:weather:{round(lat, 1)}:{round(lon, 1)}"
 
 
 def _generate_weatherkit_token() -> str:
@@ -125,37 +109,16 @@ async def _get_openmeteo(lat: float, lon: float) -> dict:
 
 async def get_weather(lat: float, lon: float) -> dict:
     """
-    Get current weather for a location (cached in Redis).
+    Get current weather for a location.
     Uses WeatherKit if configured, falls back to Open-Meteo.
     """
-    cache_key = _get_cache_key(lat, lon)
-
-    # Try cache first
-    try:
-        cached = redis_client.get(cache_key)
-        if cached:
-            return json.loads(cached)
-    except Exception as e:
-        print(f"Redis read error: {e}")
-
-    # Fetch fresh data
-    data = None
     if all([WEATHERKIT_KEY_ID, WEATHERKIT_TEAM_ID, WEATHERKIT_SERVICE_ID, WEATHERKIT_PRIVATE_KEY_PATH]):
         try:
-            data = await _get_weatherkit(lat, lon)
+            return await _get_weatherkit(lat, lon)
         except Exception as e:
             print(f"WeatherKit failed, falling back to Open-Meteo: {e}")
 
-    if data is None:
-        data = await _get_openmeteo(lat, lon)
-
-    # Cache it
-    try:
-        redis_client.setex(cache_key, WEATHER_CACHE_TTL, json.dumps(data))
-    except Exception as e:
-        print(f"Redis write error: {e}")
-
-    return data
+    return await _get_openmeteo(lat, lon)
 
 
 # For testing
