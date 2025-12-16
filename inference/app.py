@@ -7,10 +7,13 @@ Endpoints:
 """
 
 import os
+from pathlib import Path
 from typing import Optional
 
 import joblib
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .astronomy import calculate_astronomy
@@ -23,6 +26,15 @@ app = FastAPI(
     description="Predicts aurora borealis visibility probability",
     version="1.0.0",
 )
+
+# Static files
+STATIC_DIR = Path(__file__).parent / "static"
+
+
+@app.get("/")
+async def index():
+    return FileResponse(STATIC_DIR / "index.html")
+
 
 # Load models on startup
 MODEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

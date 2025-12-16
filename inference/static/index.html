@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora API</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        .subtitle {
+            color: #888;
+            margin-bottom: 40px;
+        }
+        .section {
+            background: #141414;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #666;
+            margin-bottom: 16px;
+        }
+        .input-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .input-group {
+            flex: 1;
+        }
+        label {
+            display: block;
+            font-size: 0.875rem;
+            color: #888;
+            margin-bottom: 6px;
+        }
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 1rem;
+            font-family: 'SF Mono', Monaco, monospace;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+        button {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .curl-box {
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #a0a0a0;
+        }
+        .response-box {
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            padding: 16px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            min-height: 200px;
+            color: #4a9eff;
+        }
+        .response-box.error {
+            color: #ff6b6b;
+        }
+        .meta {
+            display: flex;
+            gap: 24px;
+            margin-top: 12px;
+            font-size: 0.75rem;
+            color: #666;
+        }
+        .presets {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .preset {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: #888;
+            transition: all 0.2s;
+        }
+        .preset:hover {
+            border-color: #4a9eff;
+            color: #fff;
+        }
+        .endpoint {
+            color: #4a9eff;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Aurora API</h1>
+        <p class="subtitle">Real-time aurora borealis visibility predictions</p>
+
+        <div class="section">
+            <div class="section-title">Endpoint</div>
+            <div class="endpoint">POST /predict</div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Request</div>
+            <div class="presets">
+                <span class="preset" onclick="setLocation(64.1, -21.9)">Reykjavik</span>
+                <span class="preset" onclick="setLocation(69.6, 18.9)">Tromso</span>
+                <span class="preset" onclick="setLocation(64.8, -147.7)">Fairbanks</span>
+                <span class="preset" onclick="setLocation(58.3, -134.4)">Juneau</span>
+                <span class="preset" onclick="setLocation(62.0, -6.8)">Faroe Islands</span>
+                <span class="preset" onclick="setLocation(78.2, 15.6)">Svalbard</span>
+            </div>
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="lat">Latitude</label>
+                    <input type="number" id="lat" value="64.1" step="0.1" min="-90" max="90">
+                </div>
+                <div class="input-group">
+                    <label for="lon">Longitude</label>
+                    <input type="number" id="lon" value="-21.9" step="0.1" min="-180" max="180">
+                </div>
+            </div>
+            <button onclick="sendRequest()" id="submit">Send Request</button>
+        </div>
+
+        <div class="section">
+            <div class="section-title">curl</div>
+            <div class="curl-box" id="curl"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Response</div>
+            <div class="response-box" id="response">Click "Send Request" to test the API</div>
+            <div class="meta">
+                <span id="status"></span>
+                <span id="time"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateCurl() {
+            const lat = document.getElementById('lat').value;
+            const lon = document.getElementById('lon').value;
+            const curl = `curl -X POST https://aurora.arryan.xyz/predict \\
+  -H "Content-Type: application/json" \\
+  -d '{"latitude": ${lat}, "longitude": ${lon}}'`;
+            document.getElementById('curl').textContent = curl;
+        }
+
+        function setLocation(lat, lon) {
+            document.getElementById('lat').value = lat;
+            document.getElementById('lon').value = lon;
+            updateCurl();
+        }
+
+        async function sendRequest() {
+            const lat = parseFloat(document.getElementById('lat').value);
+            const lon = parseFloat(document.getElementById('lon').value);
+            const responseBox = document.getElementById('response');
+            const statusEl = document.getElementById('status');
+            const timeEl = document.getElementById('time');
+            const button = document.getElementById('submit');
+
+            button.disabled = true;
+            button.textContent = 'Loading...';
+            responseBox.classList.remove('error');
+            responseBox.textContent = 'Loading...';
+
+            const start = performance.now();
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ latitude: lat, longitude: lon })
+                });
+
+                const elapsed = Math.round(performance.now() - start);
+                const data = await response.json();
+
+                statusEl.textContent = `Status: ${response.status}`;
+                timeEl.textContent = `Time: ${elapsed}ms`;
+                responseBox.textContent = JSON.stringify(data, null, 2);
+
+                if (!response.ok) {
+                    responseBox.classList.add('error');
+                }
+            } catch (err) {
+                const elapsed = Math.round(performance.now() - start);
+                responseBox.classList.add('error');
+                responseBox.textContent = `Error: ${err.message}`;
+                statusEl.textContent = 'Status: Error';
+                timeEl.textContent = `Time: ${elapsed}ms`;
+            }
+
+            button.disabled = false;
+            button.textContent = 'Send Request';
+        }
+
+        document.getElementById('lat').addEventListener('input', updateCurl);
+        document.getElementById('lon').addEventListener('input', updateCurl);
+        updateCurl();
+    </script>
+</body>
+</html>
